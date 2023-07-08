@@ -5,7 +5,7 @@ package spider
 import (
 	"net/http"
 	"strings"
-	"thinkneticacourse/scannerv1/pkg/crawler"
+	"thinknetica/scannerv1/pkg/crawler"
 
 	"golang.org/x/net/html"
 )

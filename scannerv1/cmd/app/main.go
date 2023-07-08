@@ -3,49 +3,60 @@ package main
 import (
 	"flag"
 	"fmt"
-	"thinkneticacourse/scannerv1/pkg/crawler/spider"
+	"strings"
+	"thinknetica/scannerv1/pkg/crawler"
+	"thinknetica/scannerv1/pkg/crawler/spider"
 )
 
-var needle string
-var depth int
+const depth = 2
 
-func init() {
+var needle string
+
+func initFlags() {
 	flag.StringVar(&needle, "needle", "", "Option sets search key")
-	flag.IntVar(&depth, "depth", 0, "Option sets depth of search")
 	flag.Parse()
 }
 
 func main() {
+	initFlags()
 	if needle == "" {
 		fmt.Println("Option needle is empty")
 		return
 	}
 
-	if depth == 0 {
-		fmt.Println("Option depth is empty")
-		return
-	}
-
+	resources := []string{"https://golang-org.appspot.com/", "https://go.dev/"}
 	spider := spider.New()
-	resultFirst, err := spider.Scan("https://golang-org.appspot.com/", depth)
-	if err != nil {
-		fmt.Printf("Error due to scanning docs in golang-org resourse", err)
+	var scanResults []crawler.Document
+	for _, val := range resources {
+		result, err := spider.Scan(val, depth)
+		if err != nil {
+			fmt.Printf("Error due to scanning docs in %s resourse: %s", val, err)
+			continue
+		}
+
+		scanResults = append(scanResults, result...)
+	}
+
+	searchResults := search(needle, scanResults)
+	if len(searchResults) == 0 {
+		fmt.Println("No data found")
 		return
 	}
 
-	for _, value := range resultFirst {
-		fmt.Println(value.URL)
+	for _, value := range searchResults {
+		fmt.Println(value)
 	}
 
-	resultSecond, err := spider.Scan("https://go.dev/", depth)
-	if err != nil {
-		fmt.Printf("Error due to scanning docs in golang-org resourse", err)
-		return
+	fmt.Printf("Total results found:%d", len(searchResults))
+}
+
+func search(needle string, scanResults []crawler.Document) []string {
+	var links []string
+	for _, value := range scanResults {
+		if strings.Contains(value.Title, needle) || strings.Contains(value.Body, needle) {
+			links = append(links, value.URL)
+		}
 	}
 
-	for _, value := range resultSecond {
-		fmt.Println(value.URL)
-	}
-
-	fmt.Printf("Total results found:%d", len(resultFirst)+len(resultSecond))
+	return links
 }
