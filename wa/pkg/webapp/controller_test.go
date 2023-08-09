@@ -71,3 +71,23 @@ func TestUpdateById(t *testing.T) {
 		t.Errorf("Expected %s but got %v", expected, string(data))
 	}
 }
+
+func TestFindByTextNoDataFound(t *testing.T) {
+	expected := `No data found by query Transformers`
+	storage := storage.NewInMemoryStorage()
+	req := httptest.NewRequest(http.MethodPost, "/show", nil)
+	w := httptest.NewRecorder()
+	c := NewController(storage)
+	req = mux.SetURLVars(req, map[string]string{"queryText": "Transformers"})
+	c.FindByQueryText(w, req)
+	res := w.Result()
+	defer res.Body.Close()
+	data, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+
+	if string(data) != expected {
+		t.Errorf("Expected %s but got %v", expected, string(data))
+	}
+}

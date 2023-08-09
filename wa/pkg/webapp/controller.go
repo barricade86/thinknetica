@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"math/rand"
 	"net/http"
 	"strconv"
@@ -35,6 +36,7 @@ func (c *Controller) Add(w http.ResponseWriter, r *http.Request) {
 	err = json.Unmarshal(requestBodyReader, docRequestData)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
+		log.Fatal(fmt.Sprintf("error unmarshal data:%s. Request body %s", err, requestBodyReader))
 		return
 	}
 
@@ -95,7 +97,12 @@ func (c *Controller) FindByQueryText(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result, err := json.Marshal(documents)
+	docs := make([]*response.DocData, 0)
+	for _, val := range documents {
+		docs = append(docs, &response.DocData{Title: val.Title, Body: val.Body, URL: val.URL})
+	}
+
+	result, err := json.Marshal(docs)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(fmt.Sprintf("Marshalling error %s", err)))
