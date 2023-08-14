@@ -2,31 +2,41 @@ package main
 
 import (
 	"fmt"
-	"sync"
+	"thinknetica/pingpong/pkg/storage"
 )
 
 func main() {
-	var wg sync.WaitGroup
+	//var wg sync.WaitGroup
 	pingCh := make(chan string)
-	wg.Add(1)
+	pongCh := make(chan string)
+	playerStorage := storage.New()
+	playerStorage.Create("Freddy")
+	playerStorage.Create("Jason")
+	go ping(pingCh, pongCh, playerStorage)
+	go pong(pongCh, pingCh, playerStorage)
+	pingCh <- "ping"
+	/*wg.Add(1)
 	resultCh := pong(pingCh)
 	pingCh <- "ping"
 	go func(pongCh chan string, wg *sync.WaitGroup) {
 		defer wg.Done()
 		fmt.Println("pongResult = ", <-pongCh)
 	}(resultCh, &wg)
-	wg.Wait()
+	wg.Wait()*/
 }
 
-func pong(ch chan string) chan string {
-	pongCh := make(chan string)
-	go func(pingCh chan string) {
-		result := <-pingCh
-		fmt.Println("result=", result)
-		if result == "ping" {
-			pongCh <- "pong"
-		}
-	}(ch)
+func ping(chanIn chan string, chanOut chan string, playerStorage *storage.Player) {
+	for {
+		result := <-chanIn
+		fmt.Println("chanIn result=", result)
+		chanOut <- "pong"
+	}
+}
 
-	return pongCh
+func pong(chanIn chan string, chanOut chan string, playerStorage *storage.Player) {
+	for {
+		result := <-chanIn
+		fmt.Println("chanOut result=", result)
+		chanOut <- "ping"
+	}
 }
