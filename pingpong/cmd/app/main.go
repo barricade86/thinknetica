@@ -2,41 +2,62 @@ package main
 
 import (
 	"fmt"
+	"thinknetica/pingpong/pkg/model"
 	"thinknetica/pingpong/pkg/storage"
 )
 
 func main() {
-	//var wg sync.WaitGroup
 	pingCh := make(chan string)
 	pongCh := make(chan string)
 	playerStorage := storage.New()
-	playerStorage.Create("Freddy")
-	playerStorage.Create("Jason")
-	go ping(pingCh, pongCh, playerStorage)
-	go pong(pongCh, pingCh, playerStorage)
-	pingCh <- "ping"
-	/*wg.Add(1)
-	resultCh := pong(pingCh)
-	pingCh <- "ping"
-	go func(pongCh chan string, wg *sync.WaitGroup) {
-		defer wg.Done()
-		fmt.Println("pongResult = ", <-pongCh)
-	}(resultCh, &wg)
-	wg.Wait()*/
-}
-
-func ping(chanIn chan string, chanOut chan string, playerStorage *storage.Player) {
+	freddy := playerStorage.Create("Freddy")
+	jason := playerStorage.Create("Jason")
+	go play(pingCh, pongCh, freddy)
+	go play(pongCh, pingCh, jason)
+	pingCh <- "begin"
 	for {
-		result := <-chanIn
-		fmt.Println("chanIn result=", result)
-		chanOut <- "pong"
+		select {
+		case message := <-pongCh:
+			fmt.Println("message=", <-pongCh)
+			if message == "stop" {
+				return
+			}
+		case message := <-pingCh:
+			fmt.Println("message=", <-pingCh)
+			if message == "stop" {
+				return
+			}
+		default:
+			continue
+		}
 	}
 }
 
-func pong(chanIn chan string, chanOut chan string, playerStorage *storage.Player) {
+func play(chanIn chan string, chanOut chan string, player *model.Player) {
 	for {
 		result := <-chanIn
-		fmt.Println("chanOut result=", result)
-		chanOut <- "ping"
+		if result == "begin" || result == "pong" {
+			if player.Score >= 11 {
+				fmt.Printf("%s Wins!!!Score %d\n", player.Name, player.Score)
+				chanOut <- "pong"
+				break
+			}
+			fmt.Printf("%s Hits \n", player.Name)
+			chanOut <- "ping"
+		}
+
+		if result == "ping" {
+			player.Score++
+			fmt.Printf("%s hits \n", player.Name)
+			if player.Score >= 11 {
+				chanOut <- "stop"
+				if player.Score >= 11 {
+					fmt.Printf("%s Wins!!!Score %d\n", player.Name, player.Score)
+					break
+				}
+			} else {
+				chanOut <- "pong"
+			}
+		}
 	}
 }

@@ -3,42 +3,46 @@ package storage
 import (
 	"fmt"
 	"sync"
+	"thinknetica/pingpong/pkg/model"
 )
 
 type Player struct {
-	storage map[string]int
+	storage map[string]*model.Player
 	mu      sync.RWMutex
 }
 
 func New() *Player {
-	return &Player{storage: make(map[string]int, 0)}
+	return &Player{storage: make(map[string]*model.Player, 0)}
 }
 
-func (p *Player) Create(playerName string) {
+func (p *Player) Create(playerName string) *model.Player {
 	defer p.mu.Unlock()
 	p.mu.Lock()
-	p.storage[playerName] = 0
+	player := &model.Player{Name: playerName, Score: 0}
+	p.storage[playerName] = player
+
+	return player
 }
 
 func (p *Player) AddPoint(playerName string, point int) error {
 	defer p.mu.Unlock()
-	score, ok := p.storage[playerName]
+	player, ok := p.storage[playerName]
 	if !ok {
 		return fmt.Errorf("player with name %s not exists", playerName)
 	}
 
-	score = score + point
+	player.Score = player.Score + point
 	p.mu.Lock()
-	p.storage[playerName] = score
+	p.storage[playerName] = player
 
 	return nil
 }
 
-func (p *Player) GetPlayerScore(playerName string) (int, error) {
-	score, ok := p.storage[playerName]
+func (p *Player) GetPlayerByName(playerName string) (*model.Player, error) {
+	player, ok := p.storage[playerName]
 	if !ok {
-		return 0, fmt.Errorf("player with name %s not exists", playerName)
+		return nil, fmt.Errorf("player with name %s not exists", playerName)
 	}
 
-	return score, nil
+	return player, nil
 }
