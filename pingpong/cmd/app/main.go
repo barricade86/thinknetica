@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"math/rand"
 	"sync"
 	"thinknetica/pingpong/pkg/storage"
 )
@@ -10,8 +11,17 @@ func main() {
 	ppChan := make(chan string, 1)
 	var wg sync.WaitGroup
 	matchStorage := storage.New()
-	firstPlayerName := "Freddy"
-	secondPlayerName := "Jason"
+	var players = map[uint]string{0: "Freddy", 1: "Jason"}
+	randomIdx := rand.Intn(2)
+	var first, second uint
+	if randomIdx == 1 {
+		first, second = 0, 1
+	} else {
+		first, second = 1, 0
+	}
+
+	firstPlayerName := players[first]
+	secondPlayerName := players[second]
 	matchStorage.CreatePlayer(firstPlayerName)
 	matchStorage.CreatePlayer(secondPlayerName)
 	wg.Add(1)
@@ -32,6 +42,11 @@ func play(ppChan chan string, matchStorage *storage.Match, playerName string, wg
 		}
 
 		if matchStorage.ContainsValue(11) {
+			break
+		}
+
+		num := rand.Int()
+		if num < 20 {
 			break
 		}
 
