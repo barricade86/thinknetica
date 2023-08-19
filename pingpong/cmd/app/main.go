@@ -31,31 +31,33 @@ func play(ppChan chan string, matchStorage *storage.Match, playerName string, wg
 			break
 		}
 
+		player, err := matchStorage.GetPlayerByName(playerName)
+		if err != nil {
+			fmt.Printf("Error getting player by name %s\n", err)
+			continue
+		}
+
+		fmt.Printf("Player score  %d\n", player.Score)
+		if matchStorage.ContainsValue(11) {
+			break
+		}
+
 		fmt.Printf("Move from %s %s \n", playerName, message)
 		if message == "stop" {
 			close(ppChan)
 			break
 		}
 
-		player, err := matchStorage.GetPlayerByName(playerName)
-		if err != nil {
-			fmt.Printf("Error getting player by name %s\n", err)
-			continue
-		}
-		fmt.Printf("Player score  %d\n", player.Score)
-		if player.Score >= 11 {
-			ppChan <- "stop"
-			break
-		}
-
 		if message == "begin" || message == "pong" {
-			matchStorage.AddPoint(player.Name, 1)
+			matchStorage.AddPoint(playerName, 1)
 			ppChan <- "ping"
 		}
 
 		if message == "ping" {
-			matchStorage.AddPoint(player.Name, 1)
+			matchStorage.AddPoint(playerName, 1)
 			ppChan <- "pong"
 		}
 	}
+
+	ppChan <- "stop"
 }

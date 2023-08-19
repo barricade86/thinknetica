@@ -53,3 +53,12 @@ func (ms *Match) GetTotalScore() map[string]uint {
 
 	return score
 }
+
+func (ms *Match) ContainsValue(value uint) bool {
+	for _, x := range ms.storage {
+		if x.Score == value {
+			return true
+		}
+	}
+	return false
+}
