@@ -29,8 +29,8 @@ func (ms *Match) AddPoint(playerName string, point uint) error {
 		return fmt.Errorf("player with name %s not exists", playerName)
 	}
 
-	player.Score = player.Score + point
 	ms.mu.Lock()
+	player.Score = player.Score + point
 	ms.storage[playerName] = player
 
 	return nil
