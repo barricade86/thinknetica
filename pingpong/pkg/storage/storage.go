@@ -6,43 +6,50 @@ import (
 	"thinknetica/pingpong/pkg/model"
 )
 
-type Player struct {
+type Match struct {
 	storage map[string]*model.Player
 	mu      sync.RWMutex
 }
 
-func New() *Player {
-	return &Player{storage: make(map[string]*model.Player, 0)}
+func New() *Match {
+	return &Match{storage: make(map[string]*model.Player, 0)}
 }
 
-func (p *Player) Create(playerName string) *model.Player {
-	defer p.mu.Unlock()
-	p.mu.Lock()
+func (ms *Match) CreatePlayer(playerName string) {
+	defer ms.mu.Unlock()
+	ms.mu.Lock()
 	player := &model.Player{Name: playerName, Score: 0}
-	p.storage[playerName] = player
-
-	return player
+	ms.storage[playerName] = player
 }
 
-func (p *Player) AddPoint(playerName string, point int) error {
-	defer p.mu.Unlock()
-	player, ok := p.storage[playerName]
+func (ms *Match) AddPoint(playerName string, point uint) error {
+	defer ms.mu.Unlock()
+	player, ok := ms.storage[playerName]
 	if !ok {
 		return fmt.Errorf("player with name %s not exists", playerName)
 	}
 
 	player.Score = player.Score + point
-	p.mu.Lock()
-	p.storage[playerName] = player
+	ms.mu.Lock()
+	ms.storage[playerName] = player
 
 	return nil
 }
 
-func (p *Player) GetPlayerByName(playerName string) (*model.Player, error) {
-	player, ok := p.storage[playerName]
+func (ms *Match) GetPlayerByName(playerName string) (*model.Player, error) {
+	player, ok := ms.storage[playerName]
 	if !ok {
 		return nil, fmt.Errorf("player with name %s not exists", playerName)
 	}
 
 	return player, nil
+}
+
+func (ms *Match) GetTotalScore() map[string]uint {
+	score := make(map[string]uint, 0)
+	for key, val := range ms.storage {
+		score[key] = val.Score
+	}
+
+	return score
 }

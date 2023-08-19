@@ -2,62 +2,60 @@ package main
 
 import (
 	"fmt"
-	"thinknetica/pingpong/pkg/model"
+	"sync"
 	"thinknetica/pingpong/pkg/storage"
 )
 
 func main() {
-	pingCh := make(chan string)
-	pongCh := make(chan string)
-	playerStorage := storage.New()
-	freddy := playerStorage.Create("Freddy")
-	jason := playerStorage.Create("Jason")
-	go play(pingCh, pongCh, freddy)
-	go play(pongCh, pingCh, jason)
-	pingCh <- "begin"
-	for {
-		select {
-		case message := <-pongCh:
-			fmt.Println("message=", <-pongCh)
-			if message == "stop" {
-				return
-			}
-		case message := <-pingCh:
-			fmt.Println("message=", <-pingCh)
-			if message == "stop" {
-				return
-			}
-		default:
-			continue
+	ppChan := make(chan string, 1)
+	var wg sync.WaitGroup
+	matchStorage := storage.New()
+	firstPlayerName := "Freddy"
+	secondPlayerName := "Jason"
+	matchStorage.CreatePlayer(firstPlayerName)
+	matchStorage.CreatePlayer(secondPlayerName)
+	wg.Add(1)
+	go play(ppChan, matchStorage, firstPlayerName, &wg)
+	wg.Add(1)
+	go play(ppChan, matchStorage, secondPlayerName, &wg)
+	ppChan <- "begin"
+	wg.Wait()
+	wg.Add(1)
+	go func(wg *sync.WaitGroup, matchStorage *storage.Match) {
+		defer wg.Done()
+		message := <-ppChan
+		if message == "stop" {
+			fmt.Printf("%v", matchStorage.GetTotalScore())
 		}
-	}
+	}(&wg, matchStorage)
+	wg.Wait()
 }
 
-func play(chanIn chan string, chanOut chan string, player *model.Player) {
+func play(ppChan chan string, matchStorage *storage.Match, playerName string, wg *sync.WaitGroup) {
+	defer wg.Done()
+	var message string
 	for {
-		result := <-chanIn
-		if result == "begin" || result == "pong" {
-			if player.Score >= 11 {
-				fmt.Printf("%s Wins!!!Score %d\n", player.Name, player.Score)
-				chanOut <- "pong"
-				break
-			}
-			fmt.Printf("%s Hits \n", player.Name)
-			chanOut <- "ping"
+		message = <-ppChan
+		fmt.Printf("Move from %s %s \n", message, playerName)
+		player, err := matchStorage.GetPlayerByName(playerName)
+		if err != nil {
+			fmt.Printf("Error getting player by name %s\n", err)
+			continue
 		}
 
-		if result == "ping" {
-			player.Score++
-			fmt.Printf("%s hits \n", player.Name)
-			if player.Score >= 11 {
-				chanOut <- "stop"
-				if player.Score >= 11 {
-					fmt.Printf("%s Wins!!!Score %d\n", player.Name, player.Score)
-					break
-				}
-			} else {
-				chanOut <- "pong"
-			}
+		if player.Score >= 11 {
+			ppChan <- "stop"
+			break
+		}
+
+		if message == "begin" || message == "pong" {
+			matchStorage.AddPoint(player.Name, 1)
+			ppChan <- "ping"
+		}
+
+		if message == "ping" {
+			matchStorage.AddPoint(player.Name, 1)
+			ppChan <- "pong"
 		}
 	}
 }
