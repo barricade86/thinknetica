@@ -31,13 +31,6 @@ func play(ppChan chan string, matchStorage *storage.Match, playerName string, wg
 			break
 		}
 
-		player, err := matchStorage.GetPlayerByName(playerName)
-		if err != nil {
-			fmt.Printf("Error getting player by name %s\n", err)
-			continue
-		}
-
-		fmt.Printf("Player score  %d\n", player.Score)
 		if matchStorage.ContainsValue(11) {
 			break
 		}
