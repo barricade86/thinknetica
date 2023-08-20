@@ -38,6 +38,10 @@ insert into movies_actors_and_directors(movie_id,director_id,actor_id) values(3,
 insert into movies_actors_and_directors(movie_id,director_id,actor_id) values(5,4,3);
 insert into movies_actors_and_directors(movie_id,director_id,actor_id) values(6,3,1);
 insert into movies_actors_and_directors(movie_id,director_id,actor_id) values(4,3,2);
-select m.id as movieId,m.title as movieName,a.name as actorName from movies m inner join movies_actors_and_directors mad on m.id=mad.movie_id 
-                       inner join actors a on mad.actor_id=a.id WHERE a.name='Robert Englund';
+select m.id as movieId,m.title as movieName,a.name as actorName 
+from movies m inner join movies_actors_and_directors mad on m.id=mad.movie_id 
+              inner join actors a on mad.actor_id=a.id WHERE a.name='Robert Englund';
 select * from movies m where m.box_office>1000;                       
+select m.id,m.title,d.name 
+from movies m inner join movies_actors_and_directors mad on m.id=mad.movie_id 
+              inner join directors d on mad.director_id=d.id WHERE d.name='Jack Sholder';
