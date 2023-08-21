@@ -4,14 +4,14 @@ import (
 	"fmt"
 	"math/rand"
 	"sync"
-	"thinknetica/pingpong/pkg/storage"
 )
 
 func main() {
 	ppChan := make(chan string, 1)
 	var wg sync.WaitGroup
-	matchStorage := storage.New()
+	var mu sync.RWMutex
 	var players = map[uint]string{0: "Freddy", 1: "Jason"}
+	var tournamentTable = map[string]uint{"Freddy": 0, "Jason": 0}
 	randomIdx := rand.Intn(2)
 	var first, second uint
 	if randomIdx == 1 {
@@ -22,18 +22,16 @@ func main() {
 
 	firstPlayerName := players[first]
 	secondPlayerName := players[second]
-	matchStorage.CreatePlayer(firstPlayerName)
-	matchStorage.CreatePlayer(secondPlayerName)
 	wg.Add(1)
-	go play(ppChan, matchStorage, firstPlayerName, &wg)
+	go play(ppChan, tournamentTable, firstPlayerName, &wg, mu)
 	wg.Add(1)
-	go play(ppChan, matchStorage, secondPlayerName, &wg)
+	go play(ppChan, tournamentTable, secondPlayerName, &wg, mu)
 	ppChan <- "begin"
 	wg.Wait()
-	fmt.Printf("%v", matchStorage.GetTotalScore())
+	fmt.Printf("%v", tournamentTable)
 }
 
-func play(ppChan chan string, matchStorage *storage.Match, playerName string, wg *sync.WaitGroup) {
+func play(ppChan chan string, tournamentTable map[string]uint, playerName string, wg *sync.WaitGroup, mu sync.RWMutex) {
 	defer wg.Done()
 	for {
 		message, ok := <-ppChan
@@ -41,7 +39,7 @@ func play(ppChan chan string, matchStorage *storage.Match, playerName string, wg
 			break
 		}
 
-		if matchStorage.ContainsValue(11) {
+		if ContainsValue(tournamentTable, 11) {
 			break
 		}
 
@@ -57,15 +55,28 @@ func play(ppChan chan string, matchStorage *storage.Match, playerName string, wg
 		}
 
 		if message == "begin" || message == "pong" {
-			matchStorage.AddPoint(playerName, 1)
+			mu.Lock()
+			tournamentTable[playerName]++
 			ppChan <- "ping"
+			mu.Unlock()
 		}
 
 		if message == "ping" {
-			matchStorage.AddPoint(playerName, 1)
+			mu.Lock()
+			tournamentTable[playerName]++
 			ppChan <- "pong"
+			mu.Unlock()
 		}
 	}
 
 	ppChan <- "stop"
+}
+
+func ContainsValue(tournamentTable map[string]uint, value uint) bool {
+	for _, x := range tournamentTable {
+		if x == value {
+			return true
+		}
+	}
+	return false
 }
