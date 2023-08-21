@@ -16,15 +16,15 @@ import (
 	"github.com/gorilla/mux"
 )
 
-type Controller struct {
+type API struct {
 	storage *storage.InMemoryStorage
 }
 
-func NewController(storage *storage.InMemoryStorage) *Controller {
-	return &Controller{storage: storage}
+func New(storage *storage.InMemoryStorage) *API {
+	return &API{storage: storage}
 }
 
-func (c *Controller) Add(w http.ResponseWriter, r *http.Request) {
+func (a *API) Add(w http.ResponseWriter, r *http.Request) {
 	docRequestData := &response.DocData{}
 	requestBodyReader, err := ioutil.ReadAll(r.Body)
 	if err != nil {
@@ -43,12 +43,12 @@ func (c *Controller) Add(w http.ResponseWriter, r *http.Request) {
 	source := rand.NewSource(time.Now().UnixNano())
 	randSource := rand.New(source)
 	id := randSource.Int()
-	c.storage.Add(crawler.Document{ID: id, Title: docRequestData.Title, URL: docRequestData.URL, Body: docRequestData.Body})
+	a.storage.Add(crawler.Document{ID: id, Title: docRequestData.Title, URL: docRequestData.URL, Body: docRequestData.Body})
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(`OK`))
 }
 
-func (c *Controller) Remove(w http.ResponseWriter, r *http.Request) {
+func (a *API) Remove(w http.ResponseWriter, r *http.Request) {
 	queryParams := mux.Vars(r)
 	_, ok := queryParams["id"]
 	if !ok {
@@ -64,7 +64,7 @@ func (c *Controller) Remove(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = c.storage.Delete(docID)
+	err = a.storage.Delete(docID)
 	if !ok {
 		w.WriteHeader(http.StatusNotFound)
 		w.Write([]byte(fmt.Sprintf("Document with %d not found", docID)))
@@ -81,7 +81,7 @@ func (c *Controller) Remove(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(`OK`))
 }
 
-func (c *Controller) FindByQueryText(w http.ResponseWriter, r *http.Request) {
+func (a *API) FindByQueryText(w http.ResponseWriter, r *http.Request) {
 	queryParams := mux.Vars(r)
 	queryText, ok := queryParams["queryText"]
 	if !ok {
@@ -90,7 +90,7 @@ func (c *Controller) FindByQueryText(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	documents := c.storage.FindByQueryText(queryText)
+	documents := a.storage.FindByQueryText(queryText)
 	if len(documents) == 0 {
 		w.WriteHeader(http.StatusNotFound)
 		w.Write([]byte(fmt.Sprintf("No data found by query %s", queryText)))
@@ -118,7 +118,7 @@ func (c *Controller) FindByQueryText(w http.ResponseWriter, r *http.Request) {
 	w.Write(result)
 }
 
-func (c *Controller) UpdateById(w http.ResponseWriter, r *http.Request) {
+func (a *API) UpdateById(w http.ResponseWriter, r *http.Request) {
 	queryParams := mux.Vars(r)
 	_, ok := queryParams["id"]
 	if !ok {
@@ -148,7 +148,7 @@ func (c *Controller) UpdateById(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = c.storage.UpdateById(docID, docData)
+	err = a.storage.UpdateById(docID, docData)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(fmt.Sprintf("Update error %s", err)))

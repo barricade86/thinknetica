@@ -1,7 +1,6 @@
 package main
 
 import (
-	"log"
 	"net/http"
 	"thinknetica/wa/pkg/storage"
 	"thinknetica/wa/pkg/webapp"
@@ -15,11 +14,11 @@ var needle string
 
 func main() {
 	storage := storage.NewInMemoryStorage()
-	controller := webapp.NewController(storage)
+	api := webapp.New(storage)
 	router := mux.NewRouter()
-	router.HandleFunc("/add", controller.Add)
-	router.HandleFunc("/delete/{id}", controller.Remove)
-	router.HandleFunc("/show/{queryText}", controller.FindByQueryText)
-	router.HandleFunc("/update/{id}", controller.UpdateById)
-	log.Fatalf("%s", http.ListenAndServe("localhost:8081", router))
+	router.HandleFunc("/add", api.Add)
+	router.HandleFunc("/delete/{id}", api.Remove)
+	router.HandleFunc("/show/{queryText}", api.FindByQueryText)
+	router.HandleFunc("/update/{id}", api.UpdateById)
+	http.ListenAndServe("localhost:8081", router)
 }
