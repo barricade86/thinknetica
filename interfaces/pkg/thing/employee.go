@@ -14,17 +14,21 @@ type Employee struct {
 
 func FindCreatureMaxAge(creatures ...interface{}) interface{} {
 	var max interface{}
+	if len(creatures) == 0 {
+		return 0
+	}
+
 	max = creatures[0]
 	for i := 0; i < len(creatures); i++ {
-		switch creatures[i].(type) {
+		switch person := creatures[i].(type) {
 		case Customer:
-			if creatures[i].(Customer).Age > max.(Customer).Age {
+			if person.Age > max.(Customer).Age {
 				max = creatures[i]
 			}
 
 			continue
 		case Employee:
-			if creatures[i].(Employee).Age > max.(Employee).Age {
+			if person.Age > max.(Employee).Age {
 				max = creatures[i]
 			}
 
