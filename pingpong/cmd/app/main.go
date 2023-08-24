@@ -9,7 +9,6 @@ import (
 func main() {
 	ppChan := make(chan string, 1)
 	var wg sync.WaitGroup
-	var mu sync.RWMutex
 	var players = map[uint]string{0: "Freddy", 1: "Jason"}
 	var tournamentTable = map[string]uint{"Freddy": 0, "Jason": 0}
 	randomIdx := rand.Intn(2)
@@ -23,49 +22,45 @@ func main() {
 	firstPlayerName := players[first]
 	secondPlayerName := players[second]
 	wg.Add(1)
-	go play(ppChan, tournamentTable, firstPlayerName, &wg, mu)
+	go play(ppChan, tournamentTable, firstPlayerName, &wg)
 	wg.Add(1)
-	go play(ppChan, tournamentTable, secondPlayerName, &wg, mu)
+	go play(ppChan, tournamentTable, secondPlayerName, &wg)
 	ppChan <- "begin"
 	wg.Wait()
 	fmt.Printf("%v", tournamentTable)
 }
 
-func play(ppChan chan string, tournamentTable map[string]uint, playerName string, wg *sync.WaitGroup, mu sync.RWMutex) {
+func play(ppChan chan string, tournamentTable map[string]uint, playerName string, wg *sync.WaitGroup) {
 	defer wg.Done()
-	for {
-		message, ok := <-ppChan
-		if !ok {
-			break
-		}
-
+	var nextMove string
+	for move := range ppChan {
 		if ContainsValue(tournamentTable, 11) {
 			break
 		}
 
-		num := rand.Int()
-		if num < 20 {
+		num := rand.Intn(20)
+		if num == 20 {
 			break
 		}
 
-		fmt.Printf("Move from %s %s \n", playerName, message)
-		if message == "stop" {
+		fmt.Printf("Move from %s %s \n", playerName, move)
+		switch move {
+		case "stop":
 			close(ppChan)
 			break
+		case "begin", "pong":
+			tournamentTable[playerName]++
+			nextMove = "ping"
+			break
+		case "ping":
+			tournamentTable[playerName]++
+			nextMove = "pong"
+		default:
+			continue
 		}
 
-		if message == "begin" || message == "pong" {
-			mu.Lock()
-			tournamentTable[playerName]++
-			ppChan <- "ping"
-			mu.Unlock()
-		}
-
-		if message == "ping" {
-			mu.Lock()
-			tournamentTable[playerName]++
-			ppChan <- "pong"
-			mu.Unlock()
+		if nextMove != "" {
+			ppChan <- nextMove
 		}
 	}
 
