@@ -49,17 +49,16 @@ func play(ppChan chan string, tournamentTable map[string]uint, playerName string
 			close(ppChan)
 			break
 		case "begin", "pong":
-			tournamentTable[playerName]++
 			nextMove = "ping"
 			break
 		case "ping":
-			tournamentTable[playerName]++
 			nextMove = "pong"
 		default:
 			continue
 		}
 
 		if nextMove != "" {
+			tournamentTable[playerName]++
 			ppChan <- nextMove
 		}
 	}
