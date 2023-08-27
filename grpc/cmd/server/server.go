@@ -4,12 +4,14 @@ import (
 	"context"
 	"log"
 	"net"
+	"sync"
 	pb "thinknetica/grpc/messenger"
 
 	"google.golang.org/grpc"
 )
 
 type Messages struct {
+	mu   sync.RWMutex
 	Data []pb.Message
 
 	pb.UnimplementedMessengerServer
@@ -23,7 +25,9 @@ func (m *Messages) Messages(_ *pb.Empty, stream pb.Messenger_MessagesServer) err
 }
 
 func (m *Messages) Send(_ context.Context, message *pb.Message) (*pb.Empty, error) {
+	m.mu.Lock()
 	m.Data = append(m.Data, *message)
+	defer m.mu.Unlock()
 	return new(pb.Empty), nil
 }
 
