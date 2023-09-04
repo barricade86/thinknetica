@@ -1,0 +1,40 @@
+version: "3.9"
+
+services:
+    postgres:
+      image: postgres:11.1-alpine
+      container_name: lynks-postgres
+      environment:
+        - POSTGRES_USER=root
+        - POSTGRES_PASSWORD=root
+        - POSTGRES_DB=lynks
+      volumes:  
+        - ./urlshortener/docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql  
+      ports:
+        - "5432:5432"
+      networks:
+        - backend
+
+    #redis:
+    #  image: "redis:alpine" # Use a public Redis image to build the redis service    
+    #  restart: unless-stopped
+    #  container_name: lynks-redis
+    #  environment: 
+    #    REDIS_URL: redis:6379
+    #  networks:
+    #    - backend
+
+    urlshortener:
+      tty: true
+      build:
+        context: .
+        dockerfile: urlshortener/docker/app/Dockerfile
+      container_name: lynks-url-shortener
+      volumes:
+        - ./urlshortener:/urlshortener/cmd
+        - ./urlshortener:/urlshortener/pkg
+      networks:
+        - backend
+
+networks:
+  backend:
