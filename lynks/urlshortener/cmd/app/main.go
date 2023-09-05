@@ -3,8 +3,11 @@ package main
 import (
 	"context"
 	"log"
+	"lynks/urlshortener/pkg/api"
 	"lynks/urlshortener/pkg/storage"
+	"net/http"
 
+	"github.com/gorilla/mux"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -15,6 +18,11 @@ func main() {
 	if err != nil {
 		log.Fatalf("Unable to connect to database: %v\n", err)
 	}
-	pgStorage := storage.NewShortLinks(db)
-	pgStorage.Add("http://google.com")
+
+	pgStorage := storage.NewPgShortLinks(db)
+	api := api.New(pgStorage)
+	router := mux.NewRouter()
+	router.HandleFunc("/link/create", api.CreateShortLink)
+	router.HandleFunc("/link/get", api.RedirectToOriginal)
+	http.ListenAndServe("localhost:8081", router)
 }

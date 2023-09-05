@@ -15,14 +15,14 @@ services:
       networks:
         - backend
 
-    #redis:
-    #  image: "redis:alpine" # Use a public Redis image to build the redis service    
-    #  restart: unless-stopped
-    #  container_name: lynks-redis
-    #  environment: 
-    #    REDIS_URL: redis:6379
-    #  networks:
-    #    - backend
+    redis:
+      image: "redis:alpine" # Use a public Redis image to build the redis service    
+      restart: unless-stopped
+      container_name: lynks-redis
+      environment: 
+        REDIS_URL: redis:6379
+      networks:
+        - backend
 
     urlshortener:
       tty: true
@@ -33,6 +33,18 @@ services:
       volumes:
         - ./urlshortener:/urlshortener/cmd
         - ./urlshortener:/urlshortener/pkg
+      networks:
+        - backend
+
+    cache:
+      tty: true
+      build:
+        context: .
+        dockerfile: cache/docker/Dockerfile
+      container_name: lynks-cache
+      volumes:
+        - ./cache:/cache/cmd
+        - ./cache:/cache/pkg
       networks:
         - backend
 

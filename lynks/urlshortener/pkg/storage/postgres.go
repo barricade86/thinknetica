@@ -11,18 +11,18 @@ import (
 
 var Domain = "http://lynks.org"
 
-type ShortLinks struct {
+type PgShortLinks struct {
 	connect *pgxpool.Pool
 }
 
-func NewShortLinks(connect *pgxpool.Pool) *ShortLinks {
-	return &ShortLinks{connect: connect}
+func NewPgShortLinks(connect *pgxpool.Pool) *PgShortLinks {
+	return &PgShortLinks{connect: connect}
 }
 
-func (s *ShortLinks) Add(link string) (string, error) {
+func (p *PgShortLinks) Add(link string) (string, error) {
 	generator := uuid.New()
 	uniq := strings.Replace(generator.String(), "-", "", -1)
-	_, err := s.connect.Exec(
+	_, err := p.connect.Exec(
 		context.Background(),
 		"INSERT INTO links(`short_link`,`original_link`) VALUES ($1,$2)",
 		fmt.Sprintf("%s/%s", Domain, uniq),
@@ -33,12 +33,12 @@ func (s *ShortLinks) Add(link string) (string, error) {
 		return "", fmt.Errorf("insert error:%s", err)
 	}
 
-	return uniq, nil
+	return fmt.Sprintf("%s/%s", Domain, uniq), nil
 }
 
-func (s *ShortLinks) FindOriginalByShortLink(shortLink string) (string, error) {
+func (p *PgShortLinks) FindOriginalByShortLink(shortLink string) (string, error) {
 	var originalLink string
-	err := s.connect.QueryRow(context.Background(), "select original_link from widgets where short_link=$1 OR original_link=$1", shortLink).Scan(&originalLink)
+	err := p.connect.QueryRow(context.Background(), "select original_link from widgets where short_link=$1", shortLink).Scan(&originalLink)
 	if err != nil {
 		return "", fmt.Errorf("QueryRow failed: %s\n", err)
 	}
